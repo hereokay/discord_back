@@ -83,15 +83,23 @@ app.post('/search', async (req, res) => {
       ]
   };
 
-  const results = await History.find(query).sort({ _id: -1 }).limit(2000);  
+  const results = await History.find(query).sort({ _id: -1 }).limit(3000);  
   
+  const notDupResult = results.reduce((acc, current) => {
+      if (!acc.some(result => result.content === current.content)) {
+          acc.push(current);
+      }
+      return acc;
+  }, []);
+  
+
   // BlockList에 없는 userName을 가진 원소만 필터링
     if (macro===true){
-    const filteredResults = results.filter(item => !blockList.includes(item.userName));
+    const filteredResults = notDupResult.filter(item => !blockList.includes(item.userName));
     res.status(200).json(filteredResults);
     }
     else{
-      res.status(200).json(results);
+      res.status(200).json(notDupResult);
     }
   } catch (error) {
     console.log(error.message)
