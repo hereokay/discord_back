@@ -32,6 +32,46 @@ app.get('/blockList', (req, res) => {
   
 });
 
+async function deleteEntitiesWithKeyword(keyword) {
+  try {
+    const result = await History.deleteMany({ content: new RegExp(keyword, 'i') });
+    console.log(result.deletedCount)
+    return result.deletedCount;
+  } catch (error) {
+    return -1
+  }
+}
+
+
+app.get('/delete', async (req, res) => {
+  const keyword = req.query.keyword; // 요청으로부터 userId 받기
+  const security = req.query.security;
+
+
+  if (security !== '0807'){
+    console.log(security)
+    return res.status(400).send('security가 올바르지 않습니다.');
+  }
+  if (!keyword) {
+      return res.status(400).send('keyword가 필요합니다.');
+  }
+
+  result = await deleteEntitiesWithKeyword(keyword).catch(console.error);
+  if (result === -1){
+    res.status(400).json({ 
+      message : "메시지 삭제 실패"
+    })
+  }
+  else{
+    res.status(200).json({ 
+      message: `${keyword}가 포함된 메시지 ${result}개의 메시지가 삭제되었습니다.`
+  });
+  }
+
+  
+});
+
+
 
 app.get('/block', (req, res) => {
   const userName = req.query.userName; // 요청으로부터 userId 받기
@@ -59,53 +99,61 @@ app.get('/block', (req, res) => {
 
 
 
-// POST 요청 처리
 app.post('/search', async (req, res) => {
   try {
-    const { content, userName, optionSearch,macro } = req.body;
+    const { content, userName, optionSearch, macro } = req.body;
 
-
-  
-
-    console.log("content: '" +content + "' userName: '" + userName + "' macro: '" + macro + "' IP: '" + requestIp.getClientIp(req)+ "'")
+    console.log(new Date().toISOString() + " content: '" + content + "' userName: '" + userName + "' macro: '" + macro + "' IP: '" + requestIp.getClientIp(req) + "'");
+    
     const contentKeywords = content.split(" ");
-
-    // 각 키워드에 대해 MongoDB 쿼리 조건 생성
     const contentConditions = contentKeywords.map(keyword => {
       return { content: new RegExp(keyword, 'i') };
     });
-    
+
+    // blockList를 고려하여 globalName 필드에 대한 조건 추가
+    let userNameCondition = {};
+    if (macro === true) {
+      userNameCondition = {
+        userName: { $nin: blockList, $regex: new RegExp(userName, 'i') }
+      };
+    } else {
+      userNameCondition = {
+        userName: new RegExp(userName, 'i')
+      };
+    }
+
     let query = {
       $and: [
-          ...contentConditions,
-          { globalName: new RegExp(userName, 'i') },
-          { content: new RegExp(optionSearch, 'i') }
+        ...contentConditions,
+        userNameCondition,
+        { content: new RegExp(optionSearch, 'i') }
       ]
-  };
+    };
 
-  const results = await History.find(query).sort({ _id: -1 }).limit(3000);  
-  
-  const notDupResult = results.reduce((acc, current) => {
+    // MongoDB 쿼리 실행, 결과는 자동으로 blockList를 고려하여 필터링됨
+    const results = await History.find(query).sort({ _id: -1 }).limit(2000);
+    
+
+    
+    // 중복 제거 로직은 변경 없음
+    const notDupResult = results.reduce((acc, current) => {
       if (!acc.some(result => result.content === current.content)) {
-          acc.push(current);
+        acc.push(current);
       }
       return acc;
-  }, []);
-  
+    }, []);
 
-  // BlockList에 없는 userName을 가진 원소만 필터링
-    if (macro===true){
-    const filteredResults = notDupResult.filter(item => !blockList.includes(item.userName));
-    res.status(200).json(filteredResults);
-    }
-    else{
-      res.status(200).json(notDupResult);
-    }
+    
+
+    // 이전에는 여기에서 blockList를 처리했으나, 쿼리 단계에서 이미 처리하므로 필요 없음
+    res.status(200).json(notDupResult);
+
   } catch (error) {
     console.log(error.message)
     res.status(500).send('서버 오류: ' + error.message);
   }
 });
+
 
 
 app.listen(port, '0.0.0.0');
