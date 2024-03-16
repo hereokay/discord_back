@@ -18,28 +18,15 @@ import java.util.List;
 public class SearchController {
 
     @Autowired
-    ChatService chatService;
+    private ChatService chatService;
+
     @PostMapping("/search")
-    public ResponseEntity<?> search(@RequestBody SearchRequest searchRequest) {
-        // 검색어 처리 로직
-        // service
-        List<Chat> chatList = chatService.performSearch(searchRequest);
-
-        // 처리된 검색 결과 반환
-        return ResponseEntity.ok(chatList);
-    }
-
-    @PostMapping("/test")
     public ResponseEntity<?> test(@RequestBody SearchRequest searchRequest) {
         // 검색어 처리 로직
         // service
 //        List<Chat> chatList = chatService.findChatsContainingKeyword(searchRequest);
 
         // 처리된 검색 결과 반환
-        return ResponseEntity.ok(chatService.getLatestChat());
+        return ResponseEntity.ok(chatService.performSearch(searchRequest));
     }
-
-
-
-
 }
