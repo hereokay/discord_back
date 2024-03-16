@@ -31,7 +31,6 @@ public class ChatService {
             query.addCriteria(Criteria.where("content").regex(request.getContent(), "i")); // 대소문자 구분 없음
         }
 
-
         query.limit(2000);
 
 
