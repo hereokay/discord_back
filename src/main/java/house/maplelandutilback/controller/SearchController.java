@@ -21,18 +21,17 @@ public class SearchController {
         // List<Chat> chatList = chatService.findChatsContainingKeyword(keyword);
 
         // 처리된 검색 결과 반환
-        return ResponseEntity.ok(messageService.performSearch(keyword));
+        List<Message> messageList = messageService.performSearch(keyword);
+        System.out.println(messageList.get(0).getContent());
+        return ResponseEntity.ok(messageList);
     }
 
-    @PostMapping("/socket/addChat")
-    public ResponseEntity<?> addChat(@RequestBody List<Message> messageList) {
-        // 검색어 처리 로직
-        // service
-//        List<Chat> chatList = chatService.findChatsContainingKeyword(searchRequest);
+    @PostMapping("/socket/addMessage")
+    public ResponseEntity<?> addMessage(@RequestBody List<Message> messageList) {
 
-        // 처리된 검색 결과 반환
-        // return ResponseEntity.ok(chatService.performSearch(messageList));
+        messageService.checkAndSaveAllMessages(messageList);
 
+        return ResponseEntity.ok().body("Messages saved successfully");
     }
 
 }

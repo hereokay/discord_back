@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="admin@54.180.123.92" uuid="38a44996-d171-4879-bfed-00fede0797cd">
+    <data-source source="LOCAL" name="admin@localhost" uuid="38a44996-d171-4879-bfed-00fede0797cd">
       <driver-ref>mongo</driver-ref>
       <synchronize>true</synchronize>
       <imported>true</imported>
