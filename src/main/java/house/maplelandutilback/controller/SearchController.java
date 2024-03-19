@@ -47,9 +47,10 @@ public class SearchController {
     }
 
     @PostMapping("/block/addBlock")
-    public ResponseEntity<?> addBlockByKeyword() {
+    public ResponseEntity<?> addBlock() {
 
         Long cnt = messageService.blockDetectAndDelete();
+        logger.info("Received addBlock request cnt : "+ String.valueOf(cnt));
         return ResponseEntity.ok().body("삭제된 갯수 : " + cnt);
     }
 
