@@ -38,16 +38,4 @@ public class SearchController {
         return ResponseEntity.ok().body("삭제된 갯수 : " + cnt);
     }
 
-
-
-//    @GetMapping("/test")
-//    public ResponseEntity<?> test() {
-//
-//        messageService.test();
-//
-//        return ResponseEntity.ok().body("Messages saved successfully");
-//    }
-
-
-
 }
