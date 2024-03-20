@@ -2,10 +2,12 @@ package house.maplelandutilback.service;
 
 
 import house.maplelandutilback.domain.Block;
+import house.maplelandutilback.domain.BlockRequest;
 import house.maplelandutilback.domain.Message;
 import house.maplelandutilback.repository.BlockRepository;
 import house.maplelandutilback.repository.MessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -30,18 +32,26 @@ public class MessageService {
 
     // keyword 포함된 문장 2000개 찾기, limit 이 0이면 무제한
     public List<Message> performSearch(String keyword, int limit) {
-        Query query = new Query();
 
-        // 'content' 필드에 대한 검색 조건 추가 (키워드가 포함되어 있는 경우)
-        if (keyword != null && !keyword.isEmpty()) {
-            query.addCriteria(Criteria.where("content").regex(keyword, "i")); // 대소문자 구분 없음
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return new ArrayList<>();
         }
 
-        // 제한
-        if (limit != 0){
-            query.limit(limit);
+        List<Criteria> criteriaList = new ArrayList<>();
+        String[] contentKeywords = keyword.split(" ");
+        for (String k : contentKeywords){
+
+            criteriaList.add(Criteria.where("content").regex(".*" + k + ".*", "i"));
+
         }
-        return mongoTemplate.find(query, Message.class);
+
+        Criteria combinedCriteria = new Criteria().andOperator(criteriaList.toArray(new Criteria[0]));
+        Query query = Query.query(combinedCriteria).with(Sort.by(Sort.Direction.DESC, "timeStamp")).limit(2000);
+
+        List<Message> messageList = mongoTemplate.find(query, Message.class);
+        List<Message> uniqueContentMessages = getUniqueContentMessages(messageList);
+
+        return uniqueContentMessages;
     }
 
     public void saveListNonDuplicate(List<Message> messageList) {
@@ -59,8 +69,6 @@ public class MessageService {
                 nonBlockList.add(message);
             }
         }
-
-
 
         // 이후 모든 데이터 업로드
         messageRepository.saveAll(nonBlockList);
@@ -81,7 +89,7 @@ public class MessageService {
 
 
     public Long blockDetectAndDelete(){
-        List<Message> messageList = performSearch("", 0);
+        List<Message> messageList = performSearch("장공",0);
         Map<String, Integer> contentFrequency = new HashMap<>();
 
         // 각 메시지에 대해 content 빈도수 계산
@@ -92,12 +100,12 @@ public class MessageService {
         Long cnt = 0L;
         // 빈도수가 100 이상인 content 블랙리스트에 추가
         for (Map.Entry<String, Integer> entry : contentFrequency.entrySet()) {
-            if (entry.getValue() >= 100) {
+            if (entry.getValue() >= 10) {
                 String content = entry.getKey();
 
                 // content 블랙리스트에 추가하고
                  blockRepository.save(new Block(content));
-
+//
                 // content 가진 메시지를 모두 삭제
                 Long l = messageRepository.deleteByContent(content);
                 cnt += l;
@@ -107,6 +115,21 @@ public class MessageService {
 //        System.out.println("keyword : " + keyword + " 삭제된 갯수 : " + cnt);
         return cnt;
     }
+
+    public Long keywordBlack(BlockRequest blockRequest){
+        Long cnt = 0L;
+        List<Message> messageList = performSearch(blockRequest.getKeyword(),0);
+
+        for (Message message : messageList){
+            // content 블랙리스트에 추가하고
+            blockRepository.save(new Block(message.getContent()));
+            Long l = messageRepository.deleteByContent(message.getContent());
+            cnt += l;
+        }
+
+        return cnt;
+    }
+
 
 
     /* 블랙리스트 로직

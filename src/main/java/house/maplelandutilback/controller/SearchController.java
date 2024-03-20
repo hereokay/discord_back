@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -24,9 +26,11 @@ public class SearchController {
 
     private static final Logger logger = LoggerFactory.getLogger(SearchController.class);
 
-
     @GetMapping("/search")
     public ResponseEntity<?> search(@RequestParam String keyword) {
+        if(keyword.trim() == ""){
+            return ResponseEntity.ok(new ArrayList<Message>());
+        }
 
         String ipAddress = request.getRemoteAddr();
 
@@ -45,5 +49,15 @@ public class SearchController {
 
         return ResponseEntity.ok().body("Messages saved successfully");
     }
+
+    @PostMapping("/black")
+    public ResponseEntity<?> black(@RequestBody BlockRequest blockRequest) {
+        logger.info("Received black request");
+
+        Long cnt = messageService.keywordBlack(blockRequest);
+        logger.info(" The post black process has been executed : "+ String.valueOf(cnt));
+        return ResponseEntity.ok().body("The post black process has been executed : " + String.valueOf(cnt));
+    }
+
 
 }
