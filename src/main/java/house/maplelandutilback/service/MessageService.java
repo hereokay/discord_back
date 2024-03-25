@@ -14,6 +14,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -31,7 +32,7 @@ public class MessageService {
     private MongoTemplate mongoTemplate;
 
     // keyword 포함된 문장 2000개 찾기, limit 이 0이면 무제한
-    public List<Message> performSearch(String keyword, int limit) {
+    public List<Message> performSearch(String keyword, int limit, boolean unique) {
 
         if (keyword == null || keyword.trim().isEmpty()) {
             return new ArrayList<>();
@@ -49,9 +50,12 @@ public class MessageService {
         Query query = Query.query(combinedCriteria).with(Sort.by(Sort.Direction.DESC, "timeStamp")).limit(2000);
 
         List<Message> messageList = mongoTemplate.find(query, Message.class);
-        List<Message> uniqueContentMessages = getUniqueContentMessages(messageList);
 
-        return uniqueContentMessages;
+        if (unique){
+            return getUniqueContentMessages(messageList);
+        }
+
+        return messageList;
     }
 
     public void saveListNonDuplicate(List<Message> messageList) {
@@ -88,8 +92,31 @@ public class MessageService {
     }
 
 
+    public Long deleteOrdMessage(){
+        // 현재 시간으로부터 48시간 이전 시간 계산
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.HOUR, -48);
+        Date cutoffDate = cal.getTime();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        String format = dateFormat.format(cutoffDate);
+
+        Query query = new Query(Criteria.where("timeStamp").lt(format));
+        List<Message> oldMessages = mongoTemplate.find(query, Message.class);
+
+
+        if (oldMessages.size() < 400000){
+            return mongoTemplate.remove(query, Message.class).getDeletedCount();
+        }
+        else{
+            return 0L;
+        }
+
+    }
+
+
     public Long blockDetectAndDelete(){
-        List<Message> messageList = performSearch("장공",0);
+        List<Message> messageList = performSearch("장공",0, false);
         Map<String, Integer> contentFrequency = new HashMap<>();
 
         // 각 메시지에 대해 content 빈도수 계산
@@ -118,7 +145,7 @@ public class MessageService {
 
     public Long keywordBlack(BlockRequest blockRequest){
         Long cnt = 0L;
-        List<Message> messageList = performSearch(blockRequest.getKeyword(),0);
+        List<Message> messageList = performSearch(blockRequest.getKeyword(),0,false);
 
         for (Message message : messageList){
             // content 블랙리스트에 추가하고

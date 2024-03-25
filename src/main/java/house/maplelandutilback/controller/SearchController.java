@@ -37,7 +37,7 @@ public class SearchController {
         logger.info("Received search request for keyword: " + keyword.trim() + " IP : " + ipAddress);
 
         // 처리된 검색 결과 반환
-        List<Message> messageList = messageService.performSearch(keyword.trim(),2000);
+        List<Message> messageList = messageService.performSearch(keyword.trim(),1000,true);
         return ResponseEntity.ok(messageList);
     }
 
