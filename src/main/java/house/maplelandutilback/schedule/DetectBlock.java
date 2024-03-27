@@ -20,15 +20,19 @@ public class DetectBlock {
 
     @Scheduled(fixedRate = 1000*60*5) // 5분 마다 실행
     public void detect() {
-        Long cnt = messageService.blockDetectAndDelete();
-        logger.info("The blacklist deletion process has been executed : "+ String.valueOf(cnt));
+        String[] keywordArr = {
+                "장공",
+                "노우"
+        };
+        for (String keyword : keywordArr) {
+            Long cnt = messageService.blockDetectAndDelete(keyword);
+            logger.info("The blacklist deletion process has been executed : " + String.valueOf(cnt));
+        }
     }
 
-    @Scheduled(fixedRate = 1000*60*60) // 60분 마다 실행
+    @Scheduled(fixedRate = 1000*60*60) // 0분 마다 실행
     public void deleteOld() {
         Long cnt = messageService.deleteOrdMessage();
         logger.info("The oldMessage deletion process has been executed : "+ String.valueOf(cnt));
     }
-
-
 }

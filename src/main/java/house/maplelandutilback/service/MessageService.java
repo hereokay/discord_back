@@ -41,9 +41,7 @@ public class MessageService {
         List<Criteria> criteriaList = new ArrayList<>();
         String[] contentKeywords = keyword.split(" ");
         for (String k : contentKeywords){
-
             criteriaList.add(Criteria.where("content").regex(".*" + k + ".*", "i"));
-
         }
 
         Criteria combinedCriteria = new Criteria().andOperator(criteriaList.toArray(new Criteria[0]));
@@ -115,8 +113,9 @@ public class MessageService {
     }
 
 
-    public Long blockDetectAndDelete(){
-        List<Message> messageList = performSearch("장공",0, false);
+    public Long blockDetectAndDelete(String keyword){
+        List<Message> messageList = performSearch(keyword,0, false);
+
         Map<String, Integer> contentFrequency = new HashMap<>();
 
         // 각 메시지에 대해 content 빈도수 계산
