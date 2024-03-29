@@ -4,7 +4,6 @@ import house.maplelandutilback.domain.BlockRequest;
 import house.maplelandutilback.domain.Message;
 import house.maplelandutilback.service.MessageService;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.java.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,5 +58,10 @@ public class SearchController {
         return ResponseEntity.ok().body("The post black process has been executed : " + String.valueOf(cnt));
     }
 
+
+    @GetMapping("/health")
+    public ResponseEntity<String> health(){
+        return ResponseEntity.ok().body("health");
+    }
 
 }
